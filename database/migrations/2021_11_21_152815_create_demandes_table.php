@@ -1,0 +1,37 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+class CreateDemandesTable extends Migration
+{
+    /**
+     * Run the migrations.
+     *
+     * @return void
+     */
+    public function up()
+    {
+        Schema::create('demandes', function (Blueprint $table) {
+            $table->id();
+            $table->integer('idEmployee');
+            $table->integer('idTypeDemande');
+            $table->date('dateDemande');
+            $table->date('dateReponse');
+            $table->boolean('actif');
+            $table->enum('statut', array('accept','attente','refus'))->nullable()->change();
+            $table->timestamps();
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     *
+     * @return void
+     */
+    public function down()
+    {
+        Schema::dropIfExists('demandes');
+    }
+}
