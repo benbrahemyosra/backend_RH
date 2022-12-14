@@ -90,38 +90,94 @@ protected  $attente    = '3';
             return empty($name);
         });
     }
-
-
     public function search_conges(Request $request)
     {
-    
          $name=$request->query('name');
-         if($name){
-         $pieces = explode(" ", $name);
-         $id = DB::table('users')
-         ->where('first_name', '=',$pieces[0])
-         ->where('last_name','=',$pieces[1])
-         ->select('id')->value('id');
-         }
-         $idtype = DB::table('typeconges')
-         ->where('name', '=',$request->query('type'))
-         ->select('id')->value('id');
-         $status=$request->query('status');
          $type=$request->query('type');
-         $conges = DB::table('conges')
-         ->where('id_employee', '=',$id)
-         ->orWhere('status', '=', $status)
-         ->orWhere('code_typeC', '=',$idtype)
-         ->get(); 
-         if ($conges) 
-         { return response()->json($conges,200); }
-         else
-         { return response()->json( "n'existe pas ." ,202); }
-    }  public function congeByStatus()
+         $status=$request->query('status');
+        // get from database if name != null where name
+        if($name!="" ){
+            $pieces = explode(" ", $name);
+            $user = DB::table('users')
+            ->where('first_name', '=',$pieces[0])
+            ->where('last_name','=',$pieces[1])
+            ->select("*", DB::raw("CONCAT(users.first_name,' ',users.last_name) AS Employe"))
+            ->get();
+            if($status =="" && $type=="" ){
+                $conges = DB::table('conges')
+                ->where('id_employee', '=',$user[0]->id)
+                ->paginate(5);
+            }else{
+                $conges = DB::table('conges')
+                ->where('id_employee', '=',$user[0]->id)
+                ->get();
+            }
+        }else{ 
+           //  if name == null so we getAll from database 
+            $conges = DB::table('conges')->paginate(5);
+          }
+
+           //filter by status if != null
+         if($status !="" && $status!=null){
+            $newConges=$conges->filter(function($item) use ($status){
+                return $item->status==$status; }); }
+
+           // filter by type congé if != null 
+            if($type!= ""){
+            $idtype = DB::table('typeconges')
+            ->where('name', '=',$request->query('type'))
+            ->select('actif')->value('actif');
+            if($status!= null){
+            $newConges=$newConges->filter(function($item) use ($idtype){
+                return $item->code_typeC== $idtype; });
+            }else{$newConges=$conges->filter(function($item) use ($idtype){ return $item->code_typeC== $idtype; }); }  
+}
+           // if status or type != null so make a newarray and now we add attribut Employe and typeConge with string value  
+         if($status!= "" || $type!="" ){
+            foreach ( $newConges as $c) {
+                $user = DB::table('users')
+                ->where('id',$c->id_employee)
+                ->select("*", DB::raw("CONCAT(users.first_name,' ',users.last_name) AS Employe"))
+                ->get();
+                $typeconge = DB::table('typeconges')
+                ->where('actif',$c->code_typeC)
+                ->select("*")
+                ->get();
+               if( $typeconge !=[]) {
+                $c->Employe=$user[0]->Employe;
+                $c->TypeConge=$typeconge[0]->name;
+               }
+               }
+               return response()->json($newConges,200); 
+
+        }else{
+            // if status and type == null so we add attribut Emlpoye and typeConge with string value
+            foreach ( $conges as $c) {
+                $user = DB::table('users')
+                ->where('id',$c->id_employee)
+                ->select("*", DB::raw("CONCAT(users.first_name,' ',users.last_name) AS Employe"))
+                ->get();
+                $typeconge = DB::table('typeconges')
+                ->where('actif',$c->code_typeC)
+                ->select("*")
+                ->get();
+               if( $typeconge !=[]) {
+                $c->Employe=$user[0]->Employe;
+                $c->TypeConge=$typeconge[0]->name;
+               }
+               }    
+            return response()->json($conges,200); 
+
+        }
+         
+    } 
+
+   
+     public function congeByStatus(Request $request)
     {
         $conges = DB::table('conges')
             ->where('status','attente')
-            ->get();
+            ->paginate(5);
             foreach ( $conges as $c) {
                 $user = DB::table('users')
                 ->where('id',$c->id_employee)

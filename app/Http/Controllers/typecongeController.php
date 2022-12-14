@@ -39,6 +39,11 @@ class typecongeController extends Controller
         $typeconge= new typeconge();
         $typeconge->name= $request->name;
         $typeconge->actif= $request->actif;
+        $typeconge->nbJourAn= $request->nbJourAn;
+        $typeconge->MaxJourPris= $request->MaxJourPris;
+        $typeconge->anciennete= $request->anciennete;
+        $typeconge->maxHeureAuto= $request->maxHeureAuto;
+        $typeconge->nbFoisMois= $request->nbFoisMois;
         $typeconge->save();
        return response()->json('added succefuly'); 
     }

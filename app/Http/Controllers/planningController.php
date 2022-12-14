@@ -121,19 +121,62 @@ class planningController extends Controller
         return response()->json('deleted succefuly',200); 
     }
 
+    public function planningbyIdUser($id)
+    {       $planning=DB::table('plannings')->get(); 
+            $i=0 ; 
+            $obj = array();
+            foreach ( $planning as $p) 
+            {  
+             
+             $ArrayLIsteEmp=json_decode($p->liste_employees, true);
+             foreach ($ArrayLIsteEmp as $a)
+              { if ($a['id'] == $id) { $obj[$i]=$p; $i++; } } 
+            }
+             return response()->json($obj,200);
+          
+    }
+
     public function search_planning(Request $request)
     {
          $date_debut=$request->query('date_debut');
          $date_fin=$request->query('date_fin');
          $type_planning=$request->query('type_planning');
-         $planning = DB::table('plannings')
-         ->where('type_planning', '=',$type_planning)
-         ->WhereBetween('date_debut',[$date_debut, $date_fin])
-         ->WhereBetween('date_fin',[$date_debut, $date_fin])
-         ->get(); 
-         if ($planning) 
-         { return response()->json($planning,200); }
-         else
-         { return response()->json( "n'existe pas ." ,202); }
+
+         // get from database if name != null where name
+        if($type_planning!="" ){
+            $planning = DB::table('plannings')
+             ->where('type_planning', '=',$type_planning)
+             ->get();
+  
+        }else{ 
+            //  if name == null so we getAll from database 
+             $planning = DB::table('plannings')->get();  }
+
+            //filter by status if != null
+        if($date_debut!="" && $date_fin !=""){
+            $newPlanning=$planning->filter(function($item) use ($date_debut,$date_fin){
+                return $item->date_debut >= $date_debut && $item->date_fin <= $date_fin;
+            });
+
+        }else if($date_debut !="" && $date_fin ==""){
+                $newPlanning=$planning->filter(function($item) use ($date_debut){
+                    return $item->date_debut >= $date_debut ;
+                });
+
+        } else if($date_fin !="" && $date_debut ==""){
+                $newPlanning=$planning->filter(function($item) use ($date_fin){
+                    return $item->date_fin <= $date_fin;
+                });
+            }
+        
+    if($date_debut!="" || $date_fin !=""){
+        return response()->json($newPlanning, 200);    
+    }else{
+        return response()->json($planning, 200);    
+
+    }      
     }
 }
+
+  
+

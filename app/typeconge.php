@@ -8,6 +8,6 @@ class typeconge extends Model
 {
     //
     protected $fillable = [
-      'name', 'actif','nbJourAn','maxJourPris','anciennete','justifiant_pdf'
+      'name', 'actif','nbJourAn','MaxJourPris','anciennete','maxHeureAuto','nbFoisMois'
     ];
 }

@@ -105,9 +105,12 @@ Route::resource('poste', 'posteController');
 /* ************************ PLANNING ************************** */
 Route::resource('planning', 'planningController');
 Route::get('search_planning', 'planningController@search_planning');
+
+Route::get('planningbyIdUser/{id}', 'planningController@planningbyIdUser');
+
 /* ************************ TACHE ************************** */
 Route::resource('tache','tacheController');
-Route::get('show1/{id}', 'tacheController@show1');
+Route::get('tachebyIdUser/{id}', 'tacheController@show1');
 /* ************************ TYPE PLANNING ************************** */
 Route::resource('typeplanning', 'typeplanningController');
 

@@ -41,32 +41,73 @@ class pointageController extends Controller
         }else{
             return response()->json( $latestPoint,200);
         }
-           
-       
-
-
     }
     
     public function search_pointage(Request $request)
     {
-        $name=$request->name;
-        if($name){
+        $name=$request->query('name');
+        $datepoi =$request->query('date');
+        if($name!=""){
         $pieces = explode(" ", $name);
         $id = DB::table('users')
         ->where('first_name', '=',$pieces[0])
         ->where('last_name','=',$pieces[1])
         ->select('id')->value('id');
-        }
-        $datepoi =$request->date;
-        $pointage = DB::table('pointages')
-        ->Where('date_debut', '=',$datepoi)
-        ->orWhere('id_employee', '=',$id)
-        ->paginate(5);
+        if($datepoi!=""){
+            $pointage = DB::table('pointages')
+            ->Where('id_employee', '=',$id)
+            ->get();
 
-        if ( $pointage) 
-        { return response()->json($pointage,200); }
-        else
-        { return response()->json( "n'existe pas ." ,202); }
+            foreach($pointage as $p){
+                $date=substr($p->date_debut,0, 10);
+                $p->date_debut=$date;
+            }
+        }else{
+            $pointage = DB::table('pointages')
+            ->Where('id_employee', '=',$id)
+            ->paginate(5);          
+        }
+        
+        }else{
+            $pointage = DB::table('pointages')
+            ->paginate(5);
+            if($datepoi !=""){
+            foreach($pointage as $p){
+                $date=substr($p->date_debut,0, 10);
+                $p->date_debut=$date;
+            }
+           }
+
+        }
+        if($datepoi !=""){
+            $newpointages=$pointage->filter(function($item) use ($datepoi){
+                return $item->date_debut==$datepoi; });
+             }
+        
+        if($datepoi!= "" ){
+                foreach ($newpointages as $c) {
+                    $user = DB::table('users')
+                    ->where('id',$c->id_employee)
+                    ->select("*", DB::raw("CONCAT(users.first_name,' ',users.last_name) AS Employe"))
+                    ->get();
+                    $c->Employe=$user[0]->Employe;
+                   }
+                   return response()->json($newpointages,200); 
+    
+        }else{
+                // if status and type == null so we add attribut Emlpoye and typeConge with string value
+                foreach ( $pointage as $c) {
+                    $user = DB::table('users')
+                    ->where('id',$c->id_employee)
+                    ->select("*", DB::raw("CONCAT(users.first_name,' ',users.last_name) AS Employe"))
+                    ->get();
+                    $c->Employe=$user[0]->Employe;
+                   
+                   }  
+   
+                return response()->json($pointage,200); 
+    
+            }
     }
 
     /**
@@ -174,7 +215,7 @@ class pointageController extends Controller
            break;
            case "clickedEndPause":
             $pointage->date_fin_pause= $request->date;
-            $pointage->position="4";
+            $pointage->position="2";
             $pointage->save();
             break;
             case "clickedEndDay":

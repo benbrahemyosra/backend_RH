@@ -21,26 +21,27 @@ protected  $attente    = '3';
 
     public function index()
     {
-        $allconges= DB::table('demandes')
-       ->get();
-       foreach ( $allconges as $c) {
-        $user = DB::table('users')
-        ->where('id',$c->id_employee)
-        ->select("*", DB::raw("CONCAT(users.first_name,' ',users.last_name) AS full_name"))
-        ->get();
-            $typedemande = DB::table('typedemandes')
-            ->where('actif',$c->type_demande )
+        $conges = DB::table('conges')
+        ->where('status','attente')
+        ->paginate(5);
+        foreach ( $conges as $c) {
+            $user = DB::table('users')
+            ->where('id',$c->id_employee)
+            ->select("*", DB::raw("CONCAT(users.first_name,' ',users.last_name) AS Employe"))
+            ->get();
+            $typeconge = DB::table('typeconges')
+            ->where('actif',$c->code_typeC )
             ->select("*")
             ->get();
-           if( $typedemande !=[]) {
+           if( $typeconge !=[]) {
+            $c->TypeConge=$typeconge[0]->name;
             $c->Employe=$user[0]->Employe;
-            $c->type_demande=$typedemande[0]->name;
            }else{
             $c->Employe='';
-            $c->TypeConge='';
            }
            }
-            return response()->json( $allconges); 
+          
+        return response()->json($conges,200);
         }
 
     public function demande_modification()
@@ -255,33 +256,61 @@ protected  $attente    = '3';
 
         $name=$request->query('name');
         $date=$request->query('date');
-        if($name){
+        if($name!=""){
         $pieces = explode(" ", $name);
         $id = DB::table('users')
         ->where('first_name', '=',$pieces[0])
         ->where('last_name','=',$pieces[1])
         ->select('id')->value('id');
-        }else{
-            $id=null;
-        }
-        $demande = DB::table('demandes')
+        $demande = DB::table('conges')
+        ->where('status','attente')
         ->where('id_employee', '=',$id)
-        ->orWhere('date_demande', '=', $date)
-        ->get(); 
+        ->paginate(5);
+        }else{
+            $demande = DB::table('conges')
+            ->where('status','attente')
+            ->paginate(5);
+        }
+        if($date!=""){
+            $newDemandes= $demande->filter(function($item) use ($date){
+                return $item->date_creation==$date; }); }
+        if($date!=""){
+            foreach ( $newDemandes as $c) {
+                $user = DB::table('users')
+                ->where('id',$c->id_employee)
+                ->select("*", DB::raw("CONCAT(users.first_name,' ',users.last_name) AS Employe"))
+                ->get();
+                $typeconge = DB::table('typeconges')
+                ->where('actif',$c->code_typeC )
+                ->select("*")
+                ->get();
+               if( $typeconge !=[]) {
+                $c->TypeConge=$typeconge[0]->name;
+                $c->Employe=$user[0]->Employe;
+               }
+            }
+            return response()->json($newDemandes,200); 
+
+        }else{
         foreach ( $demande as $c) {
             $user = DB::table('users')
             ->where('id',$c->id_employee)
-            ->select("*", DB::raw("CONCAT(users.first_name,' ',users.last_name) AS full_name"))
+            ->select("*", DB::raw("CONCAT(users.first_name,' ',users.last_name) AS Employe"))
             ->get();
-            $c->id_employee=$user[0]->full_name;   
-    
+            $typeconge = DB::table('typeconges')
+            ->where('actif',$c->code_typeC )
+            ->select("*")
+            ->get();
+           if( $typeconge !=[]) {
+            $c->TypeConge=$typeconge[0]->name;
+            $c->Employe=$user[0]->Employe;
+           }
+            
         }
-        if($demande){
+        
             return response()->json($demande,200); 
 
-        }else       
-        
-           { return response()->json( "n'existe pas ." ,202); }
+        }
    }
     
 
